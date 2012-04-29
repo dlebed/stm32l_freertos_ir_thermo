@@ -5,24 +5,40 @@
 
 #include <stdint.h>
 
+#include <power.h>
+#include <hd44780.h>
+
+
+
 void vTaskLED1(void *pvParameters) {
 
         for (;;) {
-                GPIO_SetBits(GPIOB, GPIO_Pin_0);
-                vTaskDelay(500);
-                GPIO_ResetBits(GPIOB, GPIO_Pin_0);
-                vTaskDelay(500);
+//                GPIO_SetBits(GPIOB, GPIO_Pin_0);
+        		setPowerState(POWER_STATE_HI_SPEED);
+                vTaskDelay(50 / portTICK_RATE_MS);
+                setPowerState(POWER_STATE_LOW_SPEED);
+  //              GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+                vTaskDelay(50 / portTICK_RATE_MS);
+                setPowerState(POWER_STATE_MED_SPEED);
+                vTaskDelay(50 / portTICK_RATE_MS);
         }
 
 }
 
 void vTaskLED2(void *pvParameters) {
+	vTaskDelay(1000 / portTICK_RATE_MS);
+
 
         for (;;) {
+        	//if (clockState == CLOCK_4M)
                 GPIO_SetBits(GPIOB, GPIO_Pin_1);
-                vTaskDelay(500);
+
+        	vTaskDelay(200 / portTICK_RATE_MS);
+
+        	//if (clockState == CLOCK_4M)
                 GPIO_ResetBits(GPIOB, GPIO_Pin_1);
-                vTaskDelay(500);
+
+            vTaskDelay(10 / portTICK_RATE_MS);
         }
 
 }
@@ -35,37 +51,44 @@ void  Init_GPIOs (void)
   RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 
   /* Configure the LED_pin as output push-pull for LD3 & LD4 usage*/
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_7;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_400KHz;
   GPIO_Init(GPIOB, &GPIO_InitStructure);
 
   /* Force a low level on LEDs*/
-  GPIO_WriteBit(GPIOB, GPIO_Pin_0, Bit_RESET);
+  GPIO_WriteBit(GPIOB, GPIO_Pin_0, Bit_SET);
   GPIO_WriteBit(GPIOB, GPIO_Pin_1, Bit_SET);
+  GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_RESET);
 
-
-
-
+  /*GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
+  GPIO_WriteBit(GPIOA, GPIO_Pin_2, Bit_RESET);*/
 
 }
 
 int main(void) {
 
+	initPowerSubsystem();
+
 	/* Enable the GPIOs clocks */
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC| RCC_AHBPeriph_GPIOD| RCC_AHBPeriph_GPIOE| RCC_AHBPeriph_GPIOH, ENABLE);
+	//RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC| RCC_AHBPeriph_GPIOD| RCC_AHBPeriph_GPIOE| RCC_AHBPeriph_GPIOH, ENABLE);
 
 	Init_GPIOs();
 
-	xTaskCreate(vTaskLED1, ( signed char * ) "LED1", configMINIMAL_STACK_SIZE, NULL, 2, ( xTaskHandle * ) NULL);
-	xTaskCreate(vTaskLED2, ( signed char * ) "LED2", configMINIMAL_STACK_SIZE, NULL, 2, ( xTaskHandle * ) NULL);
+	//xTaskCreate(vTaskLED1, ( signed char * ) "LED1", configMINIMAL_STACK_SIZE, NULL, 1, ( xTaskHandle * ) NULL);
+	xTaskCreate(vTaskLED2, ( signed char * ) "LED2", configMINIMAL_STACK_SIZE, NULL, 1, ( xTaskHandle * ) NULL);
 
 	vTaskStartScheduler();
 
-	while (1) {
+	initHD44780();
+	//disableHD44780();
 
+	while (1) {
+		vTaskDelay(1000 / portTICK_RATE_MS);
 	}
 }
 
@@ -115,10 +138,47 @@ void vApplicationStackOverflowHook( xTaskHandle pxTask, signed char *pcTaskName 
 
 void vApplicationIdleHook( void )
 {
-
+	__WFI();
 }
 
 void vApplicationTickHook(void) {
+	//GPIOB->BSRRL = GPIO_BSRR_BS_0;
 
+	/*if (clockState == CLOCK_WAIT_4M) {
+		clockState = CLOCK_4M;
+
+		GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		GPIOA->BSRRH = GPIO_BSRR_BS_2;
+		//RCC_MSIRangeConfig(RCC_MSIRange_4);
+		//GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		//GPIOA->BSRRH = GPIO_BSRR_BS_2;
+		//PWR_VoltageScalingConfig(PWR_VoltageScaling_Range2);
+		//GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		//GPIOA->BSRRH = GPIO_BSRR_BS_2;
+		RCC_MSIRangeConfig(RCC_MSIRange_6);
+		GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		GPIOA->BSRRH = GPIO_BSRR_BS_2;
+
+
+
+
+
+
+		SysTick_Config(4200000UL / configTICK_RATE_HZ);
+	} else if (clockState == CLOCK_WAIT_2M) {
+		clockState = CLOCK_2M;
+		//GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		//GPIOA->BSRRH = GPIO_BSRR_BS_2;
+		RCC_MSIRangeConfig(RCC_MSIRange_4);
+		//GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		//GPIOA->BSRRH = GPIO_BSRR_BS_2;
+		PWR_VoltageScalingConfig(PWR_VoltageScaling_Range3);
+		//GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		//GPIOA->BSRRH = GPIO_BSRR_BS_2;
+		RCC_MSIRangeConfig(RCC_MSIRange_1);
+		//GPIOA->BSRRL = GPIO_BSRR_BS_2;
+		//GPIOA->BSRRH = GPIO_BSRR_BS_2;
+		SysTick_Config(131000UL / configTICK_RATE_HZ);
+	}*/
 
 }

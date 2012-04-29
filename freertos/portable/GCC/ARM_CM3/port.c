@@ -59,6 +59,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "stm32l1xx.h"
+#include <power.h>
+
 /* For backward compatibility, ensure configKERNEL_INTERRUPT_PRIORITY is
 defined.  The value should also ensure backward compatibility.
 FreeRTOS.org versions prior to V4.4.0 did not include this definition. */
@@ -263,6 +266,9 @@ unsigned long ulDummy;
 
 	ulDummy = portSET_INTERRUPT_MASK_FROM_ISR();
 	{
+		//GPIOB->BSRRH = GPIO_BSRR_BS_0;
+		powerStateCheck();
+		//GPIOB->BSRRL = GPIO_BSRR_BS_0;
 		vTaskIncrementTick();
 	}
 	portCLEAR_INTERRUPT_MASK_FROM_ISR( ulDummy );

@@ -54,6 +54,10 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
+#include <stdint.h>
+
+extern volatile uint32_t currentCPU_HZ;
+
 #define vPortSVCHandler SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
 #define xPortSysTickHandler SysTick_Handler
@@ -73,8 +77,8 @@
 #define configUSE_PREEMPTION			1
 #define configUSE_IDLE_HOOK				1
 #define configUSE_TICK_HOOK				1
-#define configCPU_CLOCK_HZ				( 2100000UL )
-#define configTICK_RATE_HZ				( ( portTickType ) 1000 )
+#define configCPU_CLOCK_HZ				( currentCPU_HZ )
+#define configTICK_RATE_HZ				( ( portTickType ) 200 )
 #define configMAX_PRIORITIES			( ( unsigned portBASE_TYPE ) 5 )
 #define configMINIMAL_STACK_SIZE		( ( unsigned short ) 70 )
 #define configTOTAL_HEAP_SIZE			( ( size_t ) ( 6 * 1024 ) )

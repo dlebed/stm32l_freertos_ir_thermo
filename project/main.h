@@ -10,7 +10,5 @@
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 
-void TimingDelay_Decrement(void);
-void Delay(__IO uint32_t nTime);
 
 #endif /* __MAIN_H */
